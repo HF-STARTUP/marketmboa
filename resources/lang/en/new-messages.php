@@ -3079,4 +3079,8 @@ ____________________________________________________on_search_engines_and_see_th
 	"third_party_delivery_service_is_currently_turned_off_by_the_admin_you_can_still_configure_delivery_partners_here_but_they_cannot_be_assigned_to_orders" => "Third party delivery service is currently turned off by the admin. You can still configure delivery partners here, but they cannot be assigned to orders.",
 	"No_user_available" => "No user available",
 	"currently_no_payment_gateway_supported_for_USD_currency." => "Currently no payment gateway supported for USD currency.",
+	"Product_featured_status_updated_successfully" => "Product featured status updated successfully",
+	"Ex:_XYZ_store" => "Ex: XYZ store",
+	"please_be_reminded_that,_you_have_to_setup_data_for_these_section_for_Theme_Aster." => "Please be reminded that, you have to setup data for these section for Theme Aster.",
+	"please_be_reminded_that,_you_have_to_setup_data_for_these_section_for_Default_Theme." => "Please be reminded that, you have to setup data for these section for Default Theme.",
 ];

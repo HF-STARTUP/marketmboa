@@ -2,11 +2,11 @@
 
 namespace App\Providers;
 
-use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
-use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\RateLimiter;
 use App\Http\Requests\Request;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Route;
 
 class RouteServiceProvider extends ServiceProvider
 {
@@ -36,6 +36,7 @@ class RouteServiceProvider extends ServiceProvider
         //
 
         parent::boot();
+        $this->configureRateLimiting();
     }
 
     /**
@@ -45,8 +46,32 @@ class RouteServiceProvider extends ServiceProvider
      */
     public function map()
     {
-        $this->mapInstallRoutes();
-        //$this->mapUpdateRoutes();
+        // Every host-level route file (web, admin, vendor, mobile API
+        // v1/v2/v3) is registered inside this closure. When
+        // `APP_HOST_DOMAIN` is configured, the whole block is wrapped in
+        // `Route::domain(...)` so these routes only match on the configured
+        // host. Storefront sub-domains and custom domains fall through to
+        // the Builder module's storefront routes, which carry no domain
+        // constraint.
+        $registerHostRoutes = function () {
+            $this->mapApiRoutes();
+            $this->mapApiv2Routes();
+            $this->mapApiv3Routes();
+
+            //$this->mapInstallRoutes();
+            //$this->mapUpdateRoutes();
+
+            $this->mapBetaAdminRoutes();
+            $this->mapBetaVendorRoutes();
+            $this->mapBetaWebRoutes();
+        };
+
+        $hostDomain = config('app.host_domain');
+        if ($hostDomain) {
+            Route::domain($hostDomain)->group($registerHostRoutes);
+        } else {
+            $registerHostRoutes();
+        }
     }
 
     /**
@@ -57,14 +82,14 @@ class RouteServiceProvider extends ServiceProvider
      * @return void
      */
 
-    protected function mapInstallRoutes()
+    protected function mapInstallRoutes(): void
     {
         Route::middleware('web')
             ->namespace($this->namespace)
             ->group(base_path('routes/install.php'));
     }
 
-    protected function mapUpdateRoutes()
+    protected function mapUpdateRoutes(): void
     {
         Route::middleware('web')
             ->namespace($this->namespace)
@@ -78,7 +103,7 @@ class RouteServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    protected function mapApiRoutes()
+    protected function mapApiRoutes(): void
     {
         Route::prefix('api')
             ->middleware('api')
@@ -86,7 +111,7 @@ class RouteServiceProvider extends ServiceProvider
             ->group(base_path('routes/rest_api/v1/api.php'));
     }
 
-    protected function mapApiv2Routes()
+    protected function mapApiv2Routes(): void
     {
         Route::prefix('api')
             ->middleware('api')
@@ -100,14 +125,6 @@ class RouteServiceProvider extends ServiceProvider
             ->middleware('api')
             ->namespace($this->namespace)
             ->group(base_path('routes/rest_api/v3/seller.php'));
-    }
-
-    protected function mapApiv4Routes()
-    {
-        Route::prefix('api')
-            ->middleware('api')
-            ->namespace($this->namespace)
-            ->group(base_path('routes/rest_api/v4/api.php'));
     }
 
     /**
@@ -124,15 +141,17 @@ class RouteServiceProvider extends ServiceProvider
             ->namespace($this->namespace)
             ->group(base_path('routes/admin/routes.php'));
     }
+
     protected function mapBetaVendorRoutes(): void
     {
         Route::middleware('web')
             ->namespace($this->namespace)
             ->group(base_path('routes/vendor/routes.php'));
     }
+
     protected function mapBetaWebRoutes(): void
     {
-        Route::middleware('web')
+        Route::middleware(['web', 'logUserBrowsingNavigation'])
             ->namespace($this->namespace)
             ->group(base_path('routes/web/routes.php'));
     }

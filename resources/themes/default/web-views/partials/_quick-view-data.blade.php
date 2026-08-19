@@ -1,9 +1,17 @@
-@php
+<?php
     $overallRating = getOverallRating($product?->reviews);
     $rating = getRating($product->reviews);
     $productReviews = \App\Utils\ProductManager::get_product_review($product->id);
-@endphp
 
+    // Numéro WhatsApp propre au produit (vendeur ou boutique in-house), avec fallback global
+    $quickViewWhatsappPhone = $product->added_by == 'seller'
+        ? ($product->seller->shop->contact ?? $product->seller->phone ?? null)
+        : (getWebConfig(name: 'whatsapp')['phone'] ?? '');
+
+    if (empty($quickViewWhatsappPhone)) {
+        $quickViewWhatsappPhone = getWebConfig(name: 'whatsapp')['phone'] ?? '';
+    }
+?>
 
 <div class="modal-body rtl">
     <div class="d-flex justify-content-end pb-2 mt-2">
@@ -17,20 +25,20 @@
             <div class="pd-img-wrap position-relative">
                 <div class="swiper-container quickviewSlider2 border rounded aspect-1">
                     <div class="swiper-wrapper">
-                        @php
+                        <?php
                             $imageSources = ($product->product_type === 'physical' && !empty($product->color_image) && count($product->color_images_full_url) > 0)
                                 ? $product->color_images_full_url
                                 : $product->images_full_url;
-                        @endphp
+                        ?>
 
-                        @foreach ($imageSources as $key => $photo)
-                            @php
+                        <?php foreach ($imageSources as $key => $photo): ?>
+                            <?php
                                 $imagePath = isset($photo['image_name'])
                                     ? getStorageImages(path: $photo['image_name'], type: 'backend-product')
                                     : getStorageImages(path: $photo, type: 'backend-product');
 
                                 $colorCode = $photo['color'] ?? '';
-                            @endphp
+                            ?>
                             <div class="swiper-slide position-relative" data-color="{{ $colorCode }}">
                                 <div class="easyzoom easyzoom--overlay is-ready">
                                     <a href="{{ $imagePath }}">
@@ -38,11 +46,11 @@
                                     </a>
                                 </div>
                             </div>
-                        @endforeach
+                        <?php endforeach; ?>
 
                     </div>
                 </div>
-                @if (getProductPriceByType(product: $product, type: 'discount', result: 'value') > 0)
+                <?php if (getProductPriceByType(product: $product, type: 'discount', result: 'value') > 0): ?>
                     <div class="discount-badge-wrapper">
                     <span class="fs-13 text-white bg-primary text-nowrap fw-bold d-block discount-badge">
                         <span class="direction-ltr d-block">
@@ -50,18 +58,18 @@
                         </span>
                     </span>
                     </div>
-                @endif
+                <?php endif; ?>
                 <div class="cz-product-gallery-icons">
                     <div class="d-flex flex-column gap-12px pt-3">
-                        @if($product->product_type == "physical")
+                        <?php if ($product->product_type == "physical"): ?>
                         <div class="bg-white btn-circle border" style="--size: 35px" data-toggle="tooltip" title="{{ translate('Physical_Product') }}" data-placement="left">
                             <img class="h-16px aspect-1 svg" src="{{theme_asset(path: "public/assets/front-end/img/icons/physical-product.svg")}}" alt="{{ translate('Physical_Product') }}">
                         </div>
-                        @else
+                        <?php else: ?>
                             <div class="bg-white btn-circle border" style="--size: 35px" data-toggle="tooltip" title="{{ translate('Digital_Product') }}" data-placement="left">
                                 <img class="h-16px aspect-1 svg" src="{{theme_asset(path: "public/assets/front-end/img/icons/digital-product.svg")}}" alt="{{ translate('Digital_Product') }}">
                             </div>
-                        @endif
+                        <?php endif; ?>
                         <button type="button" data-product-id="{{ $product['id'] }}"
                                 class="btn __text-18px border wishList-pos-btn d-sm-none product-action-add-wishlist position-static rounded-circle">
                             <i class="fa {{($wishlist_status == 1?'fa-heart':'fa-heart-o')}} wishlist_icon_{{$product['id']}} web-text-primary"
@@ -101,16 +109,16 @@
                 <div class="mt-3 user-select-none">
                     <div class="quickviewSliderThumb2 swiper-container position-relative active-border">
                         <div class="swiper-wrapper auto-item-width justify-content-start">
-                            @foreach ($imageSources as $key => $photo)
-                                @php
+                            <?php foreach ($imageSources as $key => $photo): ?>
+                                <?php
                                     $imagePath = isset($photo['image_name'])
                                         ? getStorageImages(path: $photo['image_name'], type: 'backend-product')
                                         : getStorageImages(path: $photo, type: 'backend-product');
-                                @endphp
+                                ?>
                                 <div class="swiper-slide position-relative rounded border" role="group">
                                     <img class="aspect-1" alt="" src="{{ $imagePath }}">
                                 </div>
-                            @endforeach
+                            <?php endforeach; ?>
                         </div>
 
                         <div class="swiper-button-next swiper-quickview-button-next"></div>
@@ -122,33 +130,33 @@
 
         <div class="col-lg-7 col-md-8 col-12 mt-md-0 mt-sm-3 web-direction">
             <div class="details __h-100 product-cart-option-container border-0 py-0">
-                @if (getWebConfig(name: 'business_mode') == 'multi')
-                    @if($product->added_by =="admin")
+                <?php if (getWebConfig(name: 'business_mode') == 'multi'): ?>
+                    <?php if ($product->added_by == "admin"): ?>
                         <a href="{{route('vendor-shop',['slug'=> getInHouseShopConfig(key:'slug')])}}" class="d-block pb-2 text-truncate">{{getInHouseShopConfig('name')?? ""}}</a>
-                    @else
+                    <?php else: ?>
                         <a href="{{route('vendor-shop',['slug'=> $product->seller?->shop?->slug])}}" class="d-block pb-2 text-truncate">{{$product->seller?->shop?->name ?? ""}}</a>
-                    @endif
-                @endif
+                    <?php endif; ?>
+                <?php endif; ?>
 
                 <a href="{{route('product',$product->slug)}}" class="fs-18 fw-bold text-title mb-3">{{$product->name}}</a>
                 <div class="d-flex flex-wrap align-items-baseline gap-3 mb-3 pro">
-                    @if($overallRating[0] != 0)
+                    <?php if ($overallRating[0] != 0): ?>
                         <div class="d-flex gap-1 align-items-baseline">
                             <div class="star-rating">
-                                @for($inc=0;$inc<5;$inc++)
-                                    @if($inc<$overallRating[0])
+                                <?php for ($inc = 0; $inc < 5; $inc++): ?>
+                                    <?php if ($inc < $overallRating[0]): ?>
                                         <i class="sr-star czi-star-filled m-0 active"></i>
-                                    @else
+                                    <?php else: ?>
                                         <i class="sr-star czi-star m-0"></i>
-                                    @endif
-                                @endfor
+                                    <?php endif; ?>
+                                <?php endfor; ?>
                             </div>
                             <span class="d-inline-block  align-middle mt-1 fs-14 text-muted">({{$overallRating[0]}})</span>
                         </div>
                         <span class="font-wreight-normal fs-14 font-for-tab d-inline-block font-size-sm text-body align-middle">
                             <span class="web-text-primary fw-semibold">{{$overallRating[1]}}</span> {{translate('reviews')}}</span>
                         <span class="border-middle-14px"></span>
-                    @endif
+                    <?php endif; ?>
                     <span
                         class="font-wreight-normal fs-14 font-for-tab d-inline-block font-size-sm text-body align-middle">
                         <span class="web-text-primary fw-semibold">
@@ -162,40 +170,40 @@
 
                 </div>
 
-                @if($product['product_type'] == 'digital')
+                <?php if ($product['product_type'] == 'digital'): ?>
                     <div class="digital-product-authors mb-2">
-                        @if(count($productPublishingHouseInfo['data']) > 0)
+                        <?php if (count($productPublishingHouseInfo['data']) > 0): ?>
                             <div class="d-flex align-items-center g-2 me-2">
                                 <span class="text-capitalize digital-product-author-title">{{ translate('Publishing_House') }} :</span>
                                 <div class="item-list">
-                                    @foreach($productPublishingHouseInfo['data'] as $publishingHouseName)
+                                    <?php foreach ($productPublishingHouseInfo['data'] as $publishingHouseName): ?>
                                         <a href="{{ route('products', ['publishing_house_id' => $publishingHouseName['id'], 'product_type' => 'digital', 'page'=>1]) }}"
                                            class="text-base">
                                             {{ $publishingHouseName['name'] }}
                                         </a>
-                                    @endforeach
+                                    <?php endforeach; ?>
                                 </div>
                             </div>
-                        @endif
+                        <?php endif; ?>
 
-                        @if(count($productAuthorsInfo['data']) > 0)
+                        <?php if (count($productAuthorsInfo['data']) > 0): ?>
                             <div class="d-flex align-items-center g-2 me-2">
                                 <span
                                     class="text-capitalize digital-product-author-title">{{ translate('Author') }} :</span>
                                 <div class="item-list">
-                                    @foreach($productAuthorsInfo['data'] as $productAuthor)
+                                    <?php foreach ($productAuthorsInfo['data'] as $productAuthor): ?>
                                         <a href="{{ route('products',['author_id' => $productAuthor['id'], 'product_type' => 'digital', 'page' => 1]) }}"
                                            class="text-base">
                                             {{ $productAuthor['name'] }}
                                         </a>
-                                    @endforeach
+                                    <?php endforeach; ?>
                                 </div>
                             </div>
-                        @endif
+                        <?php endif; ?>
                     </div>
-                @endif
+                <?php endif; ?>
                 <form class="addToCartDynamicForm add-to-cart-details-form d-flex flex-column gap-3">
-                    @csrf
+                    <?php echo csrf_field(); ?>
 
                     <div>
                         <span class="font-weight-normal text-accent d-flex align-items-center gap-2">
@@ -205,19 +213,19 @@
 
                     <input type="hidden" name="id" value="{{ $product->id }}">
                     <div class="position-relative {{count(json_decode($product->colors)) > 0 ? '' : 'd-none'}}">
-                        @if (count(json_decode($product->colors)) > 0)
+                        <?php if (count(json_decode($product->colors)) > 0): ?>
                             <div class="flex-start align-items-center gap-3 mt-1 mb-2">
                                 <div class="product-description-label __color-9B9B9B fs-14 text-nowrap">
                                     {{translate('color')}}:
                                 </div>
                                 <div class="">
                                     <ul class="flex-start checkbox-color mb-0 p-0 list-inline gap-2">
-                                        @foreach (json_decode($product->colors) as $key => $color)
+                                        <?php foreach (json_decode($product->colors) as $key => $color): ?>
                                             <li>
                                                 <input type="radio"
                                                        id="{{ $product->id }}-color-{{ str_replace('#','',$color) }}"
                                                        name="color" value="{{ $color }}"
-                                                       @if($key == 0) checked @endif>
+                                                       <?php if ($key == 0): ?>checked<?php endif; ?>>
                                                 <label style="background: {{ $color }};"
                                                        class="quick-view-preview-image-by-color shadow-border"
                                                        for="{{ $product->id }}-color-{{ str_replace('#','',$color) }}"
@@ -227,78 +235,78 @@
                                                     <span class="outline"></span>
                                                 </label>
                                             </li>
-                                        @endforeach
+                                        <?php endforeach; ?>
                                     </ul>
                                 </div>
                             </div>
-                        @endif
+                        <?php endif; ?>
 
-                        @php
+                        <?php
                             $qty = 0;
                             foreach (json_decode($product->variation) as $key => $variation) {
                                 $qty += $variation->qty;
                             }
-                        @endphp
+                        ?>
 
                     </div>
 
-                    @foreach (json_decode($product->choice_options) as $key => $choice)
+                    <?php foreach (json_decode($product->choice_options) as $key => $choice): ?>
                         <div class="flex-start gap-3">
                             <div class="product-description-label __color-9B9B9B fs-14 mt-1 text-capitalize text-nowrap">
                                 {{ $choice->title }}:
                             </div>
                             <div>
                                 <ul class="checkbox-alphanumeric checkbox-alphanumeric--style-1 p-0 mt-1">
-                                    @foreach ($choice->options as $index => $option)
+                                    <?php foreach ($choice->options as $index => $option): ?>
                                         <span>
                                             <input type="radio" id="{{ $choice->name }}-{{ $option }}"
                                                    name="{{ $choice->name }}"
-                                                   value="{{ $option }}" @if($index==0) checked @endif>
+                                                   value="{{ $option }}" <?php if ($index == 0): ?>checked<?php endif; ?>>
                                             <label class="user-select-none"
                                                    for="{{ $choice->name }}-{{ $option }}">
                                                     <span class="text-nowrap max-w-180 line--limit-1">{{ $option }}</span>
                                                 </label>
                                         </span>
-                                    @endforeach
+                                    <?php endforeach; ?>
                                 </ul>
                             </div>
                         </div>
-                    @endforeach
+                    <?php endforeach; ?>
 
-                    @php($extensionIndex=0)
-                    @if($product['product_type'] == 'digital' && $product['digital_product_file_types'] && count($product['digital_product_file_types']) > 0 && $product['digital_product_extensions'])
-                        @foreach($product['digital_product_extensions'] as $extensionKey => $extensionGroup)
+                    <?php $extensionIndex = 0; ?>
+                    <?php if ($product['product_type'] == 'digital' && $product['digital_product_file_types'] && count($product['digital_product_file_types']) > 0 && $product['digital_product_extensions']): ?>
+                        <?php foreach ($product['digital_product_extensions'] as $extensionKey => $extensionGroup): ?>
                             <div class="row flex-start mx-0 align-items-center">
                                 <div
                                     class="product-description-label text-body fs-14 text-capitalize text-nowrap">
                                     {{ translate($extensionKey) }} :
                                 </div>
                                 <div>
-                                    @if(count($extensionGroup) > 0)
+                                    <?php if (count($extensionGroup) > 0): ?>
                                         <div
                                             class="list-inline checkbox-alphanumeric checkbox-alphanumeric--style-1 p-0 mb-0 mx-1 flex-start row ps-0">
-                                            @foreach($extensionGroup as $index => $extension)
+                                            <?php foreach ($extensionGroup as $index => $extension): ?>
                                                 <div>
                                                     <div class="for-mobile-capacity">
                                                         <input type="radio" hidden
                                                                id="extension_{{ str_replace(' ', '-', $extension) }}"
                                                                name="variant_key"
                                                                value="{{ $extensionKey.'-'.preg_replace('/\s+/', '-', $extension) }}"
-                                                            {{ $extensionIndex == 0 ? 'checked' : ''}}>
+                                                            <?php echo $extensionIndex == 0 ? 'checked' : ''; ?>>
                                                         <label for="extension_{{ str_replace(' ', '-', $extension) }}"
                                                                class="__text-12px">
                                                                <span class="text-nowrap max-w-180 line--limit-1">{{ $extension }}</span>
                                                         </label>
                                                     </div>
                                                 </div>
-                                                @php($extensionIndex++)
-                                            @endforeach
+                                                <?php $extensionIndex++; ?>
+                                            <?php endforeach; ?>
                                         </div>
-                                    @endif
+                                    <?php endif; ?>
                                 </div>
                             </div>
-                        @endforeach
-                    @endif
+                        <?php endforeach; ?>
+                    <?php endif; ?>
 
                     <div class="mb-3">
                         <div class="product-quantity d-flex flex-column">
@@ -349,11 +357,11 @@
                         </div>
                     </div>
 
-                    @php($guestCheckout = getWebConfig(name: 'guest_checkout'))
+                    <?php $guestCheckout = getWebConfig(name: 'guest_checkout'); ?>
 
                     <div
-                        class="__btn-grp align-items-center product-add-and-buy-section" {!! $firstVariationQuantity <= 0 ? 'style="display: none;"' : '' !!}>
-                        @if(($product->added_by == 'admin' && (checkVendorAbility(type: 'inhouse', status: 'temporary_close') || checkVendorAbility(type: 'inhouse', status: 'vacation_status'))) || ($product->added_by == 'seller' && (checkVendorAbility(type: 'vendor', status: 'temporary_close', vendor: $product->seller->shop) || checkVendorAbility(type: 'vendor', status: 'vacation_status', vendor: $product->seller->shop))))
+                        class="__btn-grp align-items-center flex-wrap gap-2 product-add-and-buy-section" <?php echo $firstVariationQuantity <= 0 ? 'style="display: none;"' : ''; ?>>
+                        <?php if (($product->added_by == 'admin' && (checkVendorAbility(type: 'inhouse', status: 'temporary_close') || checkVendorAbility(type: 'inhouse', status: 'vacation_status'))) || ($product->added_by == 'seller' && (checkVendorAbility(type: 'vendor', status: 'temporary_close', vendor: $product->seller->shop) || checkVendorAbility(type: 'vendor', status: 'vacation_status', vendor: $product->seller->shop)))): ?>
                             <button class="btn btn-secondary" type="button" disabled>
                                 {{translate('buy_now')}}
                             </button>
@@ -361,7 +369,7 @@
                             <button class="btn btn--primary string-limit" type="button" disabled>
                                 {{translate('add_to_cart')}}
                             </button>
-                        @else
+                        <?php else: ?>
                             <button class="btn btn-secondary product-buy-now-button"
                                     type="button"
                                     data-form=".add-to-cart-details-form"
@@ -378,7 +386,7 @@
                             >
                                 {{ $initialProductConfig['first_variant_in_cart'] ? translate('update_cart') : translate('add_to_cart') }}
                             </button>
-                        @endif
+                        <?php endif; ?>
 
                         <button type="button" data-product-id="{{$product['id']}}"
                                 class="btn __text-18px border product-action-add-wishlist">
@@ -397,9 +405,21 @@
                         </button>
                     </div>
 
-                    @if(($product['product_type'] == 'physical'))
+                    <div class="quickview-whatsapp-wrapper mt-2 w-100">
+                        <a href="javascript:void(0)" id="quickview-whatsapp-order-btn"
+                           class="btn btn--primary w-100 d-flex align-items-center justify-content-center gap-2 rounded-10 py-3 font-weight-semibold text-capitalize"
+                           data-whatsapp="{{ $quickViewWhatsappPhone }}"
+                           data-form=".add-to-cart-details-form"
+                        >
+                            <img src="{{ theme_asset(path: 'public/assets/front-end/img/whatsapp.svg') }}"
+                                 alt="{{ translate('whatsapp') }}" loading="eager" style="width:1.25rem;height:auto;">
+                            <span>{{ translate('order_on_whatsapp') }}</span>
+                        </a>
+                    </div>
+
+                    <?php if ($product['product_type'] == 'physical'): ?>
                         <div
-                            class="product-restock-request-section collapse" {!! $firstVariationQuantity <= 0 ? 'style="display: block;"' : '' !!}>
+                            class="product-restock-request-section collapse" <?php echo $firstVariationQuantity <= 0 ? 'style="display: block;"' : ''; ?>>
                             <button type="button"
                                     class="btn request-restock-btn btn-outline-primary fw-semibold product-restock-request-button me-2"
                                     data-auth="{{ auth('customer')->check() }}"
@@ -425,28 +445,56 @@
                                 </div>
                             </button>
                         </div>
-                    @endif
+                    <?php endif; ?>
 
                    <div>
-                       @if($product->added_by == 'admin')
-                           @if(checkVendorAbility(type: 'inhouse', status: 'temporary_close') || checkVendorAbility(type: 'inhouse', status: 'vacation_status'))
+                       <?php if ($product->added_by == 'admin'): ?>
+                           <?php if (checkVendorAbility(type: 'inhouse', status: 'temporary_close') || checkVendorAbility(type: 'inhouse', status: 'vacation_status')): ?>
                                <div class="alert alert-danger" role="alert">
                                    {{ translate('this_shop_is_temporary_closed_or_on_vacation._You_cannot_add_product_to_cart_from_this_shop_for_now') }}
                                </div>
-                           @endif
-                       @elseif($product->added_by == 'seller')
-                           @if(checkVendorAbility(type: 'vendor', status: 'temporary_close', vendor: $product->seller->shop) || checkVendorAbility(type: 'vendor', status: 'vacation_status', vendor: $product->seller->shop))
+                           <?php endif; ?>
+                       <?php elseif ($product->added_by == 'seller'): ?>
+                           <?php if (checkVendorAbility(type: 'vendor', status: 'temporary_close', vendor: $product->seller->shop) || checkVendorAbility(type: 'vendor', status: 'vacation_status', vendor: $product->seller->shop)): ?>
                                <div class="alert alert-danger" role="alert">
                                    {{ translate('this_shop_is_temporary_closed_or_on_vacation._You_cannot_add_product_to_cart_from_this_shop_for_now') }}
                                </div>
-                           @endif
-                       @endif
+                           <?php endif; ?>
+                       <?php endif; ?>
                    </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+    .quickview-whatsapp-wrapper .btn {
+        font-size: 14px;
+    }
+
+    @media (max-width: 575.98px) {
+        .product-add-and-buy-section {
+            flex-direction: column;
+            align-items: stretch !important;
+        }
+        .product-add-and-buy-section .btn {
+            width: 100%;
+        }
+        .quickview-whatsapp-wrapper .btn {
+            font-size: 13px;
+            padding-top: .65rem;
+            padding-bottom: .65rem;
+        }
+    }
+
+    @media (min-width: 576px) and (max-width: 991.98px) {
+        .product-add-and-buy-section {
+            flex-wrap: wrap;
+            row-gap: .5rem;
+        }
+    }
+</style>
 
 <script type="text/javascript">
     "use strict";
@@ -492,5 +540,58 @@
             mainSwiper.slideTo(colorIndex);
             thumbSwiper.slideTo(colorIndex);
         }
+    });
+
+    document.addEventListener("click", function (e) {
+        const button = e.target.closest("#quickview-whatsapp-order-btn");
+        if (!button) return;
+
+        e.preventDefault();
+
+        let whatsapp = button.dataset.whatsapp || "";
+        if (!whatsapp) {
+            alert("Numéro WhatsApp indisponible");
+            return;
+        }
+        whatsapp = whatsapp.replace(/\D/g, "");
+
+        const form = document.querySelector(button.dataset.form);
+        if (!form) return;
+
+        const productName = document.querySelector('.details a.fs-18')?.textContent.trim() || '';
+        const quantity = form.querySelector('input[name="quantity"]')?.value || 1;
+        const totalPrice = document.querySelector('.product-details-chosen-price-amount')?.textContent.trim() || '';
+
+        const selectedColorInput = form.querySelector('input[name="color"]:checked');
+        const selectedColorLabel = selectedColorInput
+            ? document.querySelector(`label[for="${selectedColorInput.id}"]`)
+            : null;
+        const selectedColorName = selectedColorLabel?.getAttribute('data-title') || '';
+
+        const choiceParts = [];
+        form.querySelectorAll('.checkbox-alphanumeric input[type="radio"]:checked').forEach(input => {
+            if (input.name === 'variant_key') return;
+            const label = form.querySelector(`label[for="${input.id}"]`);
+            const value = label ? label.textContent.trim() : input.value;
+            choiceParts.push(`${input.name} : ${value}`);
+        });
+
+        const selectedExtension = form.querySelector('input[name="variant_key"]:checked');
+        const extensionLabel = selectedExtension
+            ? form.querySelector(`label[for="${selectedExtension.id}"]`)?.textContent.trim()
+            : '';
+
+        let message = "👋 *Bonjour, je souhaite commander ce produit :*\n\n";
+        message += `• *${productName}*\n`;
+        if (selectedColorName) message += `  Couleur : ${selectedColorName}\n`;
+        if (choiceParts.length) message += `  ${choiceParts.join(', ')}\n`;
+        if (extensionLabel) message += `  Format : ${extensionLabel}\n`;
+        message += `  Qté : ${quantity}\n`;
+        message += `  Total : ${totalPrice}\n`;
+
+        window.open(
+            `https://wa.me/${whatsapp}?text=${encodeURIComponent(message)}`,
+            "_blank"
+        );
     });
 </script>

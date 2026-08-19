@@ -1,13 +1,13 @@
 <?php return array (
   'admin_panel' => 
   array (
-    'active' => '0',
-    'name' => 'Test User',
-    'identifier' => 'test@gmail.com',
-    'username' => 'test_user',
-    'purchase_key' => 'test_user',
+    'active' => '1',
+    'name' => 'Hermann TCHOUOTCHEDJOM FOMO',
+    'identifier' => 'hermannkamani@gmail.com',
+    'username' => 'dzokoukegni',
+    'purchase_key' => '1fcb730c-d167-4b5a-b322-5f201d23da4a',
     'software_id' => 'MzE0NDg1OTc=',
-    'domain' => '6valley-testing.6amdev.xyz',
+    'domain' => '127.0.0.1:8000',
     'software_type' => 'product',
     'errors' => 
     array (

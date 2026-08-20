@@ -9,6 +9,25 @@
     }
 ?>
 
+<style>
+#sticky-whatsapp-order-btn {
+    background-color: #25D366 !important;
+    border-color: #25D366 !important;
+    color: #fff !important;
+    transition: all 0.3s ease;
+}
+
+#sticky-whatsapp-order-btn:hover {
+    background-color: #1da851 !important;
+    border-color: #1da851 !important;
+    color: #fff !important;
+}
+
+#sticky-whatsapp-order-btn img {
+    filter: brightness(0) invert(1);
+}
+</style>
+
 <div class="bg-white product-details-sticky product-details-sticky-section pt-4 pt-md-3 pb-3 {{ $productDetails->variation && count(json_decode($productDetails->variation)) > 0 ? 'multi-variation-product' : '' }}">
     <div class="btn-circle product-details-sticky-collapse-btn d-md-none transition cursor-pointer shadow-sm position-absolute translate-middle top-0 left-50 justify-content-center align-items-center {{ $productDetails->variation && count(json_decode($productDetails->variation)) > 0 ? 'd-flex' : 'd-none' }}" style="--size: 34px">
         <i class="czi-arrow-up"></i>
